@@ -20,47 +20,33 @@ with st.sidebar:
     )
     st.session_state.selected_nav = selected
 
-# ---- Home Page ----
+# ---- Pages ----
 if st.session_state.selected_nav == "🏠 Home":
     st.title("🌾 Indigenous Weather Wisdom AI Model")
     st.markdown("""
     This web application is a professional showcase of a machine learning model built to forecast rainfall in Ghana's Pra River Basin.
     It combines a unique dataset of Indigenous Ecological Indicators with modern AI.
+    
+    Use the navigation menu on the left to explore the app's features.
     """)
     st.subheader("Explore the App's Sections")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("### 🌦️ Prediction")
-        if st.button("Make a New Prediction"):
-            st.session_state.selected_nav = "🌦️ Prediction"
-            st.rerun()
-
-    with col2:
-        st.markdown("### 📊 Insights")
-        if st.button("View Data Visualizations"):
-            st.session_state.selected_nav = "📊 Insights"
-            st.rerun()
-            
     st.markdown("---")
     
-    col3, col4 = st.columns(2)
-    with col3:
-        st.markdown("### 🧠 Explainability")
-        if st.button("Understand the Model"):
-            st.session_state.selected_nav = "🧠 Explainability"
-            st.rerun()
+    st.markdown("### **🌦️ Prediction**")
+    st.write("Make new predictions based on your own data.")
+    
+    st.markdown("### **📊 Insights**")
+    st.write("Explore data visualizations and key insights from the dataset.")
 
-    with col4:
-        st.markdown("### 📈 Forecasting")
-        if st.button("View the Time Series Forecast"):
-            st.session_state.selected_nav = "📈 Forecasting"
-            st.rerun()
-            
+    st.markdown("### **📈 Forecasting**")
+    st.write("View the time series forecast for future weather patterns.")
+
+    st.markdown("### **🧠 Explainability**")
+    st.write("Understand how the model makes its decisions.")
+    
     st.markdown("---")
     st.markdown("<div style='text-align: center;'>Made with ❤️ for the Indigenous Weather Competition</div>", unsafe_allow_html=True)
 
-# ---- Pages ----
 elif st.session_state.selected_nav == "🌦️ Prediction":
     prediction_page.render()
 
