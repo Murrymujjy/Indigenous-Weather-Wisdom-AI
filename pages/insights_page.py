@@ -10,13 +10,13 @@ def render():
     def load_data():
         try:
             # The path is relative to the app.py file
-            df = pd.read_csv('train_data.csv') 
+            df = pd.read_csv('train.csv') 
             df['community'] = df['community'].astype(str).str.strip()
             df['predicted_intensity'] = df['predicted_intensity'].astype(str).str.strip()
             df['Target'] = df['Target'].astype(str)
             return df
         except FileNotFoundError:
-            st.error("Training data file not found. Please place 'train_data.csv' in the same folder as app.py.")
+            st.error("Training data file not found. Please place 'train.csv' in the same folder as app.py.")
             return pd.DataFrame()
 
     df = load_data()
