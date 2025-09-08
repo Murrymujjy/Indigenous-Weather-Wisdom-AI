@@ -3,5 +3,6 @@ numpy
 catboost
 streamlit
 scikit-learn
+streamlit-option-menu
 plotly
 shap
