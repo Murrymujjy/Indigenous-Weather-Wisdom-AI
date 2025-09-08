@@ -3,6 +3,7 @@ from streamlit_option_menu import option_menu
 import pages.prediction_page as prediction_page
 import pages.insights_page as insights_page
 import pages.explainability_page as explainability_page
+import pages.forecasting_page as forecasting_page
 
 # ---- Session Setup ----
 if "selected_nav" not in st.session_state:
@@ -12,10 +13,10 @@ if "selected_nav" not in st.session_state:
 with st.sidebar:
     selected = option_menu(
         "Navigation",
-        ["🏠 Home", "🌦️ Prediction", "📊 Insights", "🧠 Explainability"],
-        icons=["house", "cloud-drizzle", "bar-chart-line", "brain"],
+        ["🏠 Home", "🌦️ Prediction", "📊 Insights", "🧠 Explainability", "📈 Forecasting"],
+        icons=["house", "cloud-drizzle", "bar-chart-line", "brain", "graph-up-arrow"],
         menu_icon="cast",
-        default_index=["🏠 Home", "🌦️ Prediction", "📊 Insights", "🧠 Explainability"].index(st.session_state.selected_nav)
+        default_index=["🏠 Home", "🌦️ Prediction", "📊 Insights", "🧠 Explainability", "📈 Forecasting"].index(st.session_state.selected_nav)
     )
     st.session_state.selected_nav = selected
 
@@ -43,11 +44,19 @@ if st.session_state.selected_nav == "🏠 Home":
             
     st.markdown("---")
     
-    st.markdown("### 🧠 Explainability")
-    if st.button("Understand the Model"):
-        st.session_state.selected_nav = "🧠 Explainability"
-        st.rerun()
-    
+    col3, col4 = st.columns(2)
+    with col3:
+        st.markdown("### 🧠 Explainability")
+        if st.button("Understand the Model"):
+            st.session_state.selected_nav = "🧠 Explainability"
+            st.rerun()
+
+    with col4:
+        st.markdown("### 📈 Forecasting")
+        if st.button("View the Time Series Forecast"):
+            st.session_state.selected_nav = "📈 Forecasting"
+            st.rerun()
+            
     st.markdown("---")
     st.markdown("<div style='text-align: center;'>Made with ❤️ for the Indigenous Weather Competition</div>", unsafe_allow_html=True)
 
@@ -60,3 +69,6 @@ elif st.session_state.selected_nav == "📊 Insights":
 
 elif st.session_state.selected_nav == "🧠 Explainability":
     explainability_page.render()
+
+elif st.session_state.selected_nav == "📈 Forecasting":
+    forecasting_page.render()
