@@ -4,6 +4,7 @@ import shap
 import matplotlib.pyplot as plt
 from catboost import CatBoostClassifier
 
+
 def render():
     st.title('Model Explainability (SHAP)')
     st.markdown("SHAP (SHapley Additive exPlanations) helps us understand how each feature contributed to the model's predictions.")
