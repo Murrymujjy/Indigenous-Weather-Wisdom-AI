@@ -1,8 +1,10 @@
+streamlit
 pandas
 numpy
-catboost==1.2.8
-streamlit
 scikit-learn
-streamlit-option-menu
+catboost
+lightgbm
+prophet
 plotly
-shap
+joblib
+streamlit-option-menu
