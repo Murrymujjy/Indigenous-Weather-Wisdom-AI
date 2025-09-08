@@ -41,7 +41,17 @@ def load_resources_for_shap():
         sample_data['avg_distance_by_intensity'] = sample_data['predicted_intensity'].map(mean_map_intensity)
         sample_data['avg_distance_by_community'] = sample_data['community'].map(mean_map_community)
         
-        sample_data = sample_data.drop(columns=['community_code', 'district_code', 'Target', 'ID', 'user_id'])
+        # --- FIX: Drop columns only if they exist in the DataFrame ---
+        columns_to_drop = ['community_code', 'district_code']
+        if 'Target' in sample_data.columns:
+            columns_to_drop.append('Target')
+        if 'ID' in sample_data.columns:
+            columns_to_drop.append('ID')
+        if 'user_id' in sample_data.columns:
+            columns_to_drop.append('user_id')
+
+        sample_data = sample_data.drop(columns=columns_to_drop)
+
         for col in ['community', 'district', 'predicted_intensity']:
             sample_data[col] = sample_data[col].astype(str)
 
