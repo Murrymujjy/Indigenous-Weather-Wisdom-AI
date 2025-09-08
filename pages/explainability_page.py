@@ -11,8 +11,8 @@ def load_resources_for_shap():
         model = CatBoostClassifier()
         model.load_model('../best_catboost_model.cbm')
 
-        train_df = pd.read_csv('../train.csv')
-        test_df = pd.read_csv('../test.csv')
+        train_df = pd.read_csv('train.csv')
+        test_df = pd.read_csv('test.csv')
         
         train_df['community'] = train_df['community'].astype(str).str.strip()
         train_df['district'] = train_df['district'].astype(str).str.strip()
@@ -41,23 +41,16 @@ def load_resources_for_shap():
         sample_data['avg_distance_by_intensity'] = sample_data['predicted_intensity'].map(mean_map_intensity)
         sample_data['avg_distance_by_community'] = sample_data['community'].map(mean_map_community)
         
-        # --- FIX: Drop columns only if they exist in the DataFrame ---
-        columns_to_drop = ['community_code', 'district_code']
-        if 'Target' in sample_data.columns:
-            columns_to_drop.append('Target')
-        if 'ID' in sample_data.columns:
-            columns_to_drop.append('ID')
-        if 'user_id' in sample_data.columns:
-            columns_to_drop.append('user_id')
-
-        sample_data = sample_data.drop(columns=columns_to_drop)
+        # --- FIX: Use a more robust way to drop columns ---
+        possible_drops = ['community_code', 'district_code', 'Target', 'ID', 'user_id']
+        sample_data = sample_data.drop(columns=[col for col in possible_drops if col in sample_data.columns])
 
         for col in ['community', 'district', 'predicted_intensity']:
             sample_data[col] = sample_data[col].astype(str)
 
         return model, sample_data
     except FileNotFoundError:
-        st.error("Model or data files not found. Please ensure 'best_catboost_model.cbm', 'train_data.csv', and 'test_data.csv' are in the main directory.")
+        st.error("Model or data files not found. Please ensure 'best_catboost_model.cbm', 'train.csv', and 'test.csv' are in the main directory.")
         return None, None
 
 def render():
