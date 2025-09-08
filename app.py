@@ -43,6 +43,7 @@ if st.session_state.selected_nav == "🏠 Home":
 
     st.markdown("### **🧠 Explainability**")
     st.write("Understand how the model makes its decisions.")
+
     
     st.markdown("---")
     st.markdown("<div style='text-align: center;'>Made with ❤️ for the Indigenous Weather Competition</div>", unsafe_allow_html=True)
