@@ -1,6 +1,6 @@
 pandas
 numpy
-catboost
+catboost==1.2.8
 streamlit
 scikit-learn
 streamlit-option-menu
