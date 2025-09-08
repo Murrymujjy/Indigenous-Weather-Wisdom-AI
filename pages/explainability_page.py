@@ -11,8 +11,8 @@ def load_resources_for_shap():
         model = CatBoostClassifier()
         model.load_model('../best_catboost_model.cbm')
 
-        train_df = pd.read_csv('../train_data.csv')
-        test_df = pd.read_csv('../test_data.csv')
+        train_df = pd.read_csv('../train.csv')
+        test_df = pd.read_csv('../test.csv')
         
         train_df['community'] = train_df['community'].astype(str).str.strip()
         train_df['district'] = train_df['district'].astype(str).str.strip()
