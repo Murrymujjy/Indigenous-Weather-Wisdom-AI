@@ -1,93 +1,87 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from lightgbm import LGBMClassifier
 import joblib
 
-# --- Load Models and Data ---
+# --- Helper Functions ---
 @st.cache_resource
 def load_models():
-    """Loads the trained LightGBM model and data for the prediction page."""
+    """
+    Loads the trained LightGBM model and the training data.
+    """
     try:
-        # Load the LightGBM model directly from the file
+        # Load the LightGBM model
         lgbm_model = joblib.load('lgbm_model.joblib')
         
-        # Load the training data to be used for getting dropdown options
+        # Load the training data to get feature names and categories
         train_df = pd.read_csv('train.csv')
         
         return lgbm_model, train_df
     except FileNotFoundError:
-        st.error("Model or data files not found. Please ensure 'lgbm_model.joblib' and 'train.csv' are in your project directory.")
+        st.error("One or more files not found. Please ensure `lgbm_model.joblib` and `train.csv` are in the project directory.")
         st.stop()
     except Exception as e:
-        st.error(f"An error occurred while loading models: {e}")
+        st.error(f"An error occurred while loading the models or data: {e}")
         st.stop()
 
 # --- Page Content ---
 def render():
-    st.title("🌦️ Make a New Prediction")
+    st.title("🌦️ Prediction")
     st.markdown("Enter the details below to get a prediction for rainfall in the Pra River Basin.")
-
+    
     lgbm_model, train_df = load_models()
+    
+    # Drop rows with any missing values in the key categorical columns
+    train_df = train_df.dropna(subset=['community', 'district', 'indicator', 'time_observed'])
 
-    # Get unique values for dropdowns from training data, handling potential NaN values
-    communities = sorted(train_df['community'].dropna().unique())
-    districts = sorted(train_df['district'].dropna().unique())
-    indicators = sorted(train_df['indicator'].dropna().unique())
-    indicator_descriptions = sorted(train_df['indicator_description'].dropna().unique())
-    forecast_lengths = sorted(train_df['forecast_length'].dropna().unique())
-    predicted_intensities = sorted(train_df['predicted_intensity'].dropna().unique())
-
-    # Create input widgets for user data
+    # Get unique values for dropdown menus
+    communities = sorted(train_df['community'].unique())
+    districts = sorted(train_df['district'].unique())
+    indicators = sorted(train_df['indicator'].unique())
+    times = sorted(train_df['time_observed'].unique())
+    
     with st.form("prediction_form"):
-        st.subheader("Input Features")
+        st.subheader("Ecological Indicators")
         community = st.selectbox("Community", communities)
         district = st.selectbox("District", districts)
-        confidence = st.slider("Confidence Level", 0.0, 1.0, 0.5)
-        predicted_intensity = st.selectbox("Predicted Intensity", predicted_intensities)
         indicator = st.selectbox("Indicator", indicators)
-        indicator_description = st.selectbox("Indicator Description", indicator_descriptions)
-        forecast_length = st.selectbox("Forecast Length", forecast_lengths)
-
-        submit_button = st.form_submit_button("Predict")
-
-    if submit_button:
-        # Create a DataFrame for the user's input
-        input_data = pd.DataFrame({
-            'confidence': [confidence],
-            'predicted_intensity': [predicted_intensity],
-            'community': [community],
-            'district': [district],
-            'indicator': [indicator],
-            'indicator_description': [indicator_description],
-            'forecast_length': [forecast_length]
-        })
-
-        # --- Data Preprocessing to match the trained model ---
-        # Get the categorical columns from the training data
-        categorical_cols = train_df.select_dtypes(include='object').columns.tolist()
+        indicator_description = st.text_input("Indicator Description", "e.g., Small white mushrooms grow on trees")
+        time_observed = st.selectbox("Time Observed", times)
         
-        # One-hot encode the user's input data
-        input_encoded = pd.get_dummies(input_data, columns=categorical_cols, drop_first=True)
+        st.subheader("Meteorological Data")
+        forecast_length = st.number_input("Forecast Length (days)", min_value=1, max_value=30, value=5)
         
-        # Get the feature names from the trained model
-        # This is a critical step to ensure column order and names match
-        model_features = lgbm_model.feature_name_
+        submitted = st.form_submit_button("Get Prediction")
         
-        # Create a new DataFrame with the same columns as the training data
-        final_input = pd.DataFrame(columns=model_features)
-        
-        # Add the one-hot encoded user data to the new DataFrame
-        for col in input_encoded.columns:
-            if col in final_input.columns:
-                final_input[col] = input_encoded[col]
-
-        # Fill any missing columns (from one-hot encoding) with 0
-        final_input.fillna(0, inplace=True)
-        
-        # Now, make prediction
-        prediction = lgbm_model.predict(final_input)
-        
-        st.subheader("Prediction Result")
-        st.success(f"The predicted rainfall category is: **{prediction[0]}**")
-        st.balloons()
+        if submitted:
+            # Create a DataFrame from user inputs
+            input_data = pd.DataFrame([{
+                'community': community,
+                'district': district,
+                'indicator': indicator,
+                'indicator_description': indicator_description,
+                'time_observed': time_observed,
+                'forecast_length': forecast_length
+            }])
+            
+            # --- CRITICAL FIX: Ensure columns are aligned ---
+            
+            # 1. Separate features from the target in the training data
+            X_train = train_df.drop(columns=['rainfall', 'ID', 'user_id', 'confidence', 'predicted_intensity', 'Target'], errors='ignore')
+            
+            # 2. Get a list of all columns after one-hot encoding the training data
+            # This is our master list of features the model expects
+            encoded_train_columns = pd.get_dummies(X_train).columns
+            
+            # 3. One-hot encode the user input
+            input_encoded = pd.get_dummies(input_data)
+            
+            # 4. Align the user's input with the master list of features from training data
+            input_aligned = input_encoded.reindex(columns=encoded_train_columns, fill_value=0)
+            
+            # Make the prediction
+            try:
+                prediction = lgbm_model.predict(input_aligned)
+                st.success(f"Predicted Rainfall: {prediction[0]}")
+            except Exception as e:
+                st.error(f"An error occurred during prediction: {e}")
