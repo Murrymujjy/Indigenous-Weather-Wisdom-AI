@@ -2,86 +2,82 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-import shap
-import matplotlib.pyplot as plt
-from lightgbm import LGBMClassifier
 
-# --- Load Data and Model ---
+# --- Helper Functions ---
 @st.cache_resource
-def load_data():
-    """Loads the training and test data."""
+def load_models():
+    """
+    Loads the trained LightGBM model and the training data.
+    """
     try:
-        df_train = pd.read_csv('train.csv')
-        df_test = pd.read_csv('test.csv')
-        return df_train, df_test
-    except FileNotFoundError:
-        st.error("Data files not found. Please ensure 'train.csv' and 'test.csv' are in your project directory.")
-        st.stop()
-    except Exception as e:
-        st.error(f"An error occurred while loading data: {e}")
-        st.stop()
-
-
-@st.cache_resource
-def load_model():
-    """Loads the trained LightGBM model."""
-    try:
+        # Load the LightGBM model
         lgbm_model = joblib.load('lgbm_model.joblib')
-        return lgbm_model
+        
+        # Load the training data to get feature names and categories
+        train_df = pd.read_csv('train.csv')
+        
+        return lgbm_model, train_df
     except FileNotFoundError:
-        st.error("Model file 'lgbm_model.joblib' not found. Please ensure it's in your project directory.")
+        st.error("One or more files not found. Please ensure `lgbm_model.joblib` and `train.csv` are in the project directory.")
         st.stop()
     except Exception as e:
-        st.error(f"An error occurred while loading the model: {e}")
+        st.error(f"An error occurred while loading the models or data: {e}")
         st.stop()
-
 
 # --- Page Content ---
 def render():
-    st.title("🧠 Model Explainability")
-    st.markdown("Understand how the model makes its decisions using **SHAP (SHapley Additive exPlanations)**.")
-    st.warning("This page may take a few seconds to load as it computes complex feature importance values.")
+    st.title("🌦️ Prediction")
+    st.markdown("Enter the details below to get a prediction for rainfall in the Pra River Basin.")
     
-    df_train, _ = load_data()
-    lgbm_model = load_model()
+    lgbm_model, train_df = load_models()
+    
+    # Drop the rainfall column to get features for one-hot encoding
+    X_train = train_df.drop(columns=['rainfall']).copy()
+    
+    # Drop rows with any missing values to ensure unique() works correctly
+    train_df = train_df.dropna(subset=['community', 'district', 'indicator', 'time_observed'])
 
-    if df_train is not None and lgbm_model is not None:
-        # Check if 'rainfall' column exists before dropping
-        if 'rainfall' not in df_train.columns:
-            st.error("The `train_data.csv` file is missing the required 'rainfall' column. Please check your data.")
-            return
-
-        # Prepare data for SHAP
-        X = df_train.drop('rainfall', axis=1)
-        y = df_train['rainfall']
-
-        # Get categorical features for the explainer
-        categorical_features = [col for col in X.columns if X[col].dtype == 'object']
+    # Get unique values for dropdown menus
+    communities = sorted(train_df['community'].unique())
+    districts = sorted(train_df['district'].unique())
+    indicators = sorted(train_df['indicator'].unique())
+    times = sorted(train_df['time_observed'].unique())
+    
+    with st.form("prediction_form"):
+        st.subheader("Ecological Indicators")
+        community = st.selectbox("Community", communities)
+        district = st.selectbox("District", districts)
+        indicator = st.selectbox("Indicator", indicators)
+        indicator_description = st.text_input("Indicator Description", "e.g., Small white mushrooms grow on trees")
+        time_observed = st.selectbox("Time Observed", times)
         
-        # Instantiate and fit the LightGBM model to get a Booster object for SHAP
-        lgbm_model.fit(X, y)
+        st.subheader("Meteorological Data")
+        forecast_length = st.number_input("Forecast Length (days)", min_value=1, max_value=30, value=5)
         
-        # SHAP Explainer
-        explainer = shap.TreeExplainer(lgbm_model)
+        submitted = st.form_submit_button("Get Prediction")
         
-        st.subheader("Feature Importance Summary")
-        st.write("This summary plot shows which features are most important for the model's predictions.")
-        
-        # Calculate SHAP values for a sample of the training data
-        sample_size = min(500, len(X))
-        X_sample = X.sample(sample_size, random_state=42)
-        shap_values = explainer.shap_values(X_sample)
-        
-        fig, ax = plt.subplots(figsize=(10, 8))
-        shap.summary_plot(shap_values, X_sample, plot_type="bar", show=False)
-        st.pyplot(fig)
-        
-        st.subheader("Dependency Plots")
-        st.write("These plots show the effect of a single feature on the model's prediction. They can reveal complex relationships.")
-        
-        # Create an interactive SHAP dependency plot for a selected feature
-        feature_to_plot = st.selectbox("Select a feature to visualize:", X.columns)
-        
-        fig, ax = plt.subplots(figsize=(10, 6))
-        shap.dependence_plot(feature_to_plot, shap_values[0], X_sample, show=False)
-        st.pyplot(fig)
+        if submitted:
+            # Create a DataFrame from user inputs
+            input_data = pd.DataFrame([{
+                'community': community,
+                'district': district,
+                'indicator': indicator,
+                'indicator_description': indicator_description,
+                'time_observed': time_observed,
+                'forecast_length': forecast_length
+            }])
+            
+            # Use `get_dummies` for one-hot encoding on both user input and a template of training data
+            input_encoded = pd.get_dummies(input_data)
+            X_train_encoded = pd.get_dummies(X_train)
+            
+            # Align columns to ensure the input data matches the model's training data
+            # This is crucial to prevent `ValueError`
+            input_aligned, _ = input_encoded.align(X_train_encoded, join='right', axis=1, fill_value=0)
+            
+            # Make the prediction
+            try:
+                prediction = lgbm_model.predict(input_aligned)
+                st.success(f"Predicted Rainfall: {prediction[0]}")
+            except Exception as e:
+                st.error(f"An error occurred during prediction: {e}")
