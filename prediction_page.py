@@ -11,29 +11,31 @@ import joblib
 def load_models():
     """Loads the trained models and data for the prediction page."""
     try:
+        # Load the CatBoost model
         cat_model = CatBoostClassifier()
         cat_model.load_model("best_catboost_model.cbm")
         
-        # We need to recreate the LightGBM model structure to load the ensemble
-        lgbm_model = LGBMClassifier(objective='multiclass', random_state=42)
+        # Load the LightGBM model directly from the file
+        lgbm_model = joblib.load('lgbm_model.joblib')
         
-        # Dummy fit to create the booster, then reload from joblib
-        X_dummy = pd.DataFrame(np.zeros((1, 10)), columns=[f'col_{i}' for i in range(10)])
-        y_dummy = np.zeros(1)
-        lgbm_model.fit(X_dummy, y_dummy)
-        lgbm_model = joblib.load('lgbm_model.joblib') # Assuming you have this saved
-        
+        # We don't need to re-fit the ensemble model, just instantiate it
         ensemble_model = VotingClassifier(
             estimators=[('cat', cat_model), ('lgbm', lgbm_model)],
-            voting='soft'
+            voting='soft',
+            weights=[0.5, 0.5]  # Example weights, you can adjust as needed
         )
-
+        
+        # Load the training data to be used for getting dropdown options
         train_df = pd.read_csv('train.csv')
         
         return ensemble_model, train_df
     except FileNotFoundError:
-        st.error("Model files not found. Please ensure 'best_catboost_model.cbm' and 'lgbm_model.joblib' are in your project directory.")
+        st.error("Model or data files not found. Please ensure 'best_catboost_model.cbm', 'lgbm_model.joblib', and 'train.csv' are in your project directory.")
         st.stop()
+    except Exception as e:
+        st.error(f"An error occurred while loading models: {e}")
+        st.stop()
+
 
 # --- Page Content ---
 def render():
