@@ -26,11 +26,13 @@ def load_models():
                 train_df = train_df.drop(col, axis=1)
             # Use errors='ignore' to prevent crashing if the column is not in the test data
             if col in test_df.columns:
-                test_df = test_df.drop(col, axis=1)
+                test_df = test_df.drop(col, axis=1, errors='ignore')
 
         # Separate features from the target
         y_train = train_df['Target']
         X_train = train_df.drop(['Target'], axis=1)
+        # --- CRITICAL FIX: Add errors='ignore' to prevent the crash ---
+        X_test = test_df.drop(['Target'], axis=1, errors='ignore')
         
         # Get the list of all categorical features
         categorical_features = ['community', 'district', 'predicted_intensity', 'indicator', 'indicator_description', 'forecast_length']
@@ -40,11 +42,11 @@ def load_models():
         for col in categorical_features:
             le = LabelEncoder()
             # Concatenate for consistent encoding across train and test sets
-            all_data = pd.concat([X_train[col].astype(str), test_df[col].astype(str)], axis=0)
+            all_data = pd.concat([X_train[col].astype(str), X_test[col].astype(str)], axis=0)
             le.fit(all_data)
             label_encoders[col] = le
             
-        return lgbm_model, train_df, test_df, label_encoders
+        return lgbm_model, train_df, X_train, label_encoders, X_test
     except FileNotFoundError:
         st.error("One or more files not found. Please ensure `lgbm_model.joblib`, `train.csv`, and `test.csv` are in the project directory.")
         st.stop()
@@ -57,7 +59,7 @@ def render():
     st.title("🌦️ Prediction")
     st.markdown("Enter the details below to get a prediction for rainfall in the Pra River Basin.")
     
-    lgbm_model, train_df, test_df, label_encoders = load_models()
+    lgbm_model, train_df, X_train, label_encoders, X_test = load_models()
     
     # Drop rows with any missing values in the key categorical columns for the dropdowns
     train_df = train_df.dropna(subset=['community', 'district', 'indicator', 'predicted_intensity', 'forecast_length'])
@@ -96,13 +98,6 @@ def render():
                 encoded_input_data[col] = le.transform(encoded_input_data[col].astype(str))
             
             # Align user input with training data columns
-            X_train = train_df.drop(['Target'], axis=1)
-            X_test = test_df.drop(['Target'], axis=1, errors='ignore')
-
-            # Drop columns from X_train that are in columns_to_drop_from_raw
-            columns_to_drop_from_raw = ['ID', 'user_id', 'prediction_time', 'time_observed']
-            X_train = X_train.drop(columns=columns_to_drop_from_raw, errors='ignore')
-
             input_df = encoded_input_data.reindex(columns=X_train.columns, fill_value=0)
 
             # Make the prediction
