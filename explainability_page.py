@@ -1,66 +1,82 @@
 import streamlit as st
 import pandas as pd
-import shap
-from catboost import CatBoostClassifier
+import numpy as np
 import joblib
+import shap
+import matplotlib.pyplot as plt
+from lightgbm import LGBMClassifier
 
-# --- Load Models and Data ---
+# --- Load Data and Model ---
 @st.cache_resource
-def load_assets():
-    """Loads the trained CatBoost model and data for explainability."""
+def load_data():
+    """Loads the training and test data."""
     try:
-        # Load the training data to be used as a background dataset for SHAP
         df_train = pd.read_csv('train.csv')
-        df_train = df_train.drop(['ID', 'user_id', 'prediction_time', 'time_observed', 'Target'], axis=1)
-        
-        # Load the trained CatBoost model
-        model = CatBoostClassifier()
-        model.load_model("best_catboost_model.cbm")
-        
-        return model, df_train
+        df_test = pd.read_csv('test.csv')
+        return df_train, df_test
     except FileNotFoundError:
-        st.error("Model or data files not found. Please ensure 'best_catboost_model.cbm' and 'train_data.csv' are in the project directory.")
+        st.error("Data files not found. Please ensure 'train.csv' and 'test.csv' are in your project directory.")
         st.stop()
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {e}")
+        st.stop()
+
+
+@st.cache_resource
+def load_model():
+    """Loads the trained LightGBM model."""
+    try:
+        lgbm_model = joblib.load('lgbm_model.joblib')
+        return lgbm_model
+    except FileNotFoundError:
+        st.error("Model file 'lgbm_model.joblib' not found. Please ensure it's in your project directory.")
+        st.stop()
+    except Exception as e:
+        st.error(f"An error occurred while loading the model: {e}")
+        st.stop()
+
 
 # --- Page Content ---
 def render():
     st.title("🧠 Model Explainability")
-    st.markdown("This page uses SHAP (SHapley Additive exPlanations) to help you understand how the model arrives at its predictions.")
+    st.markdown("Understand how the model makes its decisions using **SHAP (SHapley Additive exPlanations)**.")
+    st.warning("This page may take a few seconds to load as it computes complex feature importance values.")
     
-    st.warning("Note: Generating SHAP plots can be computationally intensive and may take a moment to load.")
+    df_train, _ = load_data()
+    lgbm_model = load_model()
 
-    model, df_train = load_assets()
+    if df_train is not None and lgbm_model is not None:
+        # Prepare data for SHAP
+        X = df_train.drop('rainfall', axis=1)
+        y = df_train['rainfall']
 
-    st.subheader("Feature Importance Summary")
-    st.write("This summary plot shows which features are most important for the model's predictions.")
-    
-    # Create a SHAP explainer
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(df_train)
-    
-    # Create the SHAP summary plot
-    fig = shap.summary_plot(shap_values, df_train, show=False)
-    st.pyplot(fig, bbox_inches='tight')
-
-    st.subheader("Individual Prediction Explanation")
-    st.write("Select a row from the data to see a detailed explanation for that specific prediction.")
-    
-    # Display data table for selection
-    df_sample = df_train.sample(n=100, random_state=42)
-    selected_row = st.selectbox("Select a sample prediction to explain:", df_sample.index)
-
-    if selected_row:
-        instance = df_train.loc[[selected_row]]
-        instance_shap_values = explainer.shap_values(instance)
+        # Get categorical features for the explainer
+        categorical_features = [col for col in X.columns if X[col].dtype == 'object']
         
-        st.write("Feature values for the selected instance:")
-        st.dataframe(instance)
+        # Instantiate and fit the LightGBM model to get a Booster object for SHAP
+        lgbm_model.fit(X, y)
         
-        # Create a force plot for the individual instance
-        st.write("This plot shows how each feature value contributes to the final prediction.")
-        force_plot = shap.force_plot(
-            explainer.expected_value[0],
-            instance_shap_values[0],
-            instance
-        )
-        st.pyplot(force_plot, bbox_inches='tight')
+        # SHAP Explainer
+        explainer = shap.TreeExplainer(lgbm_model)
+        
+        st.subheader("Feature Importance Summary")
+        st.write("This summary plot shows which features are most important for the model's predictions.")
+        
+        # Calculate SHAP values for a sample of the training data
+        sample_size = min(500, len(X))
+        X_sample = X.sample(sample_size, random_state=42)
+        shap_values = explainer.shap_values(X_sample)
+        
+        fig, ax = plt.subplots(figsize=(10, 8))
+        shap.summary_plot(shap_values, X_sample, plot_type="bar", show=False)
+        st.pyplot(fig)
+        
+        st.subheader("Dependency Plots")
+        st.write("These plots show the effect of a single feature on the model's prediction. They can reveal complex relationships.")
+        
+        # Create an interactive SHAP dependency plot for a selected feature
+        feature_to_plot = st.selectbox("Select a feature to visualize:", X.columns)
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        shap.dependence_plot(feature_to_plot, shap_values[0], X_sample, show=False)
+        st.pyplot(fig)
