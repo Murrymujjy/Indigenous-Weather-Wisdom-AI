@@ -13,11 +13,11 @@ def load_models():
         lgbm_model = joblib.load('lgbm_model.joblib')
         
         # Load the training data to be used for getting dropdown options
-        train_df = pd.read_csv('train_data.csv')
+        train_df = pd.read_csv('train.csv')
         
         return lgbm_model, train_df
     except FileNotFoundError:
-        st.error("Model or data files not found. Please ensure 'lgbm_model.joblib' and 'train_data.csv' are in your project directory.")
+        st.error("Model or data files not found. Please ensure 'lgbm_model.joblib' and 'train.csv' are in your project directory.")
         st.stop()
     except Exception as e:
         st.error(f"An error occurred while loading models: {e}")
