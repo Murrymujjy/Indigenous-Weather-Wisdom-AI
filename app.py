@@ -87,6 +87,7 @@ if st.session_state.selected_nav == "🏠 Home":
             set_nav_to("🧠 Explainability")
         st.markdown("<p style='text-align:left;'>Understand the 'why' behind the predictions. Our SHAP-powered explainability features reveal which factors most influence the model's decisions.</p>", unsafe_allow_html=True)
 
+
 elif st.session_state.selected_nav == "🌦️ Prediction":
     prediction_page.render()
 
