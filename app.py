@@ -1,9 +1,9 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import pages.prediction_page as prediction_page
-import pages.insights_page as insights_page
-import pages.explainability_page as explainability_page
-import pages.forecasting_page as forecasting_page
+import prediction_page as prediction_page
+import insights_page as insights_page
+import explainability_page as explainability_page
+import forecasting_page as forecasting_page
 
 # ---- Session Setup ----
 if "selected_nav" not in st.session_state:
@@ -22,13 +22,24 @@ with st.sidebar:
 
 # ---- Page Content ----
 if st.session_state.selected_nav == "🏠 Home":
-    # --- Custom Home Page Content ---
     st.markdown("""<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    body, .stApp { font-family: 'Poppins', sans-serif; }
     .main-header { font-size: 3rem; font-weight: bold; color: #4CAF50; text-align: center; margin-bottom: 2rem; }
     .subheader { font-size: 1.5rem; color: #333; margin-top: 2rem; }
     .stButton button { background-color: #4CAF50; color: white; border-radius: 12px; padding: 10px 24px; font-size: 16px; border: none; cursor: pointer; }
     .stButton button:hover { background-color: #45a049; }
-    .feature-card { background-color: #f0f2f6; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .feature-card { 
+        background-color: #f0f2f6; 
+        border-radius: 10px; 
+        padding: 20px; 
+        margin-bottom: 15px; 
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        transition: transform 0.3s ease-in-out;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
     </style>""", unsafe_allow_html=True)
 
     st.markdown("<h1 class='main-header'>🌾 Indigenous Weather Wisdom AI Model</h1>", unsafe_allow_html=True)
