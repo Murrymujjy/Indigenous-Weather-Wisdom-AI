@@ -22,6 +22,7 @@ with st.sidebar:
 
 # ---- Page Content ----
 if st.session_state.selected_nav == "🏠 Home":
+    # --- Custom Home Page Content ---
     st.markdown("""<style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
     body, .stApp { font-family: 'Poppins', sans-serif; }
@@ -44,8 +45,9 @@ if st.session_state.selected_nav == "🏠 Home":
 
     st.markdown("<h1 class='main-header'>🌾 Indigenous Weather Wisdom AI Model</h1>", unsafe_allow_html=True)
     st.markdown("### A professional showcase of an AI model to forecast rainfall in Ghana's Pra River Basin, combining Indigenous Ecological Indicators with modern machine learning.")
-
-    st.image("https://images.unsplash.com/photo-1549487779-1d440d9b4334?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", use_column_width=True, caption="Credit: Unsplash")
+    
+    # A more reliable direct image link
+    st.image("https://images.unsplash.com/photo-1598444738743-f66184547900?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", use_column_width=True, caption="Credit: Unsplash")
 
     st.markdown("---")
     st.markdown("<h2 class='subheader'>Explore the App's Powerful Features</h2>", unsafe_allow_html=True)
