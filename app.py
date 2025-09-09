@@ -21,6 +21,9 @@ with st.sidebar:
     st.session_state.selected_nav = selected
 
 # ---- Page Content ----
+def set_nav_to(page_name):
+    st.session_state.selected_nav = page_name
+
 if st.session_state.selected_nav == "🏠 Home":
     # --- Custom Home Page Content ---
     st.markdown("""<style>
@@ -28,26 +31,34 @@ if st.session_state.selected_nav == "🏠 Home":
     body, .stApp { font-family: 'Poppins', sans-serif; }
     .main-header { font-size: 3rem; font-weight: bold; color: #4CAF50; text-align: center; margin-bottom: 2rem; }
     .subheader { font-size: 1.5rem; color: #333; margin-top: 2rem; }
-    .stButton button { background-color: #4CAF50; color: white; border-radius: 12px; padding: 10px 24px; font-size: 16px; border: none; cursor: pointer; }
-    .stButton button:hover { background-color: #45a049; }
-    .feature-card { 
+    .feature-card-button { 
         background-color: #f0f2f6; 
         border-radius: 10px; 
         padding: 20px; 
         margin-bottom: 15px; 
         box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
         transition: transform 0.3s ease-in-out;
+        width: 100%;
+        text-align: left;
+        border: none;
+        cursor: pointer;
     }
-    .feature-card:hover {
+    .feature-card-button:hover {
         transform: translateY(-5px);
+        background-color: #e6e8eb;
+    }
+    .feature-card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
     }
     </style>""", unsafe_allow_html=True)
 
     st.markdown("<h1 class='main-header'>🌾 Indigenous Weather Wisdom AI Model</h1>", unsafe_allow_html=True)
     st.markdown("### A professional showcase of an AI model to forecast rainfall in Ghana's Pra River Basin, combining Indigenous Ecological Indicators with modern machine learning.")
     
-    # A more reliable direct image link
-    st.image("https://images.unsplash.com/photo-1598444738743-f66184547900?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", use_column_width=True, caption="Credit: Unsplash")
+    # Using the new parameter to avoid deprecation warning
+    st.image("https://images.unsplash.com/photo-1598444738743-f66184547900?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", use_container_width=True, caption="Credit: Unsplash")
 
     st.markdown("---")
     st.markdown("<h2 class='subheader'>Explore the App's Powerful Features</h2>", unsafe_allow_html=True)
@@ -55,30 +66,26 @@ if st.session_state.selected_nav == "🏠 Home":
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("<div class='feature-card'>", unsafe_allow_html=True)
-        st.markdown("### 🌦️ Prediction")
-        st.write("Get a rainfall forecast by inputting new data. Our model combines CatBoost and LightGBM for high-accuracy predictions.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        if st.button("🌦️ Prediction", key="pred_button", use_container_width=True):
+            set_nav_to("🌦️ Prediction")
+        st.markdown("<p style='text-align:left;'>Get a rainfall forecast by inputting new data. Our model combines CatBoost and LightGBM for high-accuracy predictions.</p>", unsafe_allow_html=True)
     
     with col2:
-        st.markdown("<div class='feature-card'>", unsafe_allow_html=True)
-        st.markdown("### 📊 Insights")
-        st.write("Dive into the data with interactive visualizations. Understand trends, patterns, and the distribution of rainfall categories.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        if st.button("📊 Insights", key="insights_button", use_container_width=True):
+            set_nav_to("📊 Insights")
+        st.markdown("<p style='text-align:left;'>Dive into the data with interactive visualizations. Understand trends, patterns, and the distribution of rainfall categories.</p>", unsafe_allow_html=True)
     
     col3, col4 = st.columns(2)
     
     with col3:
-        st.markdown("<div class='feature-card'>", unsafe_allow_html=True)
-        st.markdown("### 📈 Forecasting")
-        st.write("See future rainfall predictions using a dedicated time-series model (Prophet). View forecasts with a clear confidence interval.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        if st.button("📈 Forecasting", key="forecast_button", use_container_width=True):
+            set_nav_to("📈 Forecasting")
+        st.markdown("<p style='text-align:left;'>See future rainfall predictions using a dedicated time-series model (Prophet). View forecasts with a clear confidence interval.</p>", unsafe_allow_html=True)
     
     with col4:
-        st.markdown("<div class='feature-card'>", unsafe_allow_html=True)
-        st.markdown("### 🧠 Explainability")
-        st.write("Understand the 'why' behind the predictions. Our SHAP-powered explainability features reveal which factors most influence the model's decisions.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        if st.button("🧠 Explainability", key="explain_button", use_container_width=True):
+            set_nav_to("🧠 Explainability")
+        st.markdown("<p style='text-align:left;'>Understand the 'why' behind the predictions. Our SHAP-powered explainability features reveal which factors most influence the model's decisions.</p>", unsafe_allow_html=True)
 
 elif st.session_state.selected_nav == "🌦️ Prediction":
     prediction_page.render()
