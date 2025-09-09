@@ -68,13 +68,13 @@ if st.session_state.selected_nav == "🏠 Home":
         st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.selected_nav == "🌦️ Prediction":
-    pages.prediction_page.render()
+    prediction_page.render()
 
 elif st.session_state.selected_nav == "📊 Insights":
-    pages.insights_page.render()
+    insights_page.render()
 
 elif st.session_state.selected_nav == "🧠 Explainability":
-    pages.explainability_page.render()
+    explainability_page.render()
 
 elif st.session_state.selected_nav == "📈 Forecasting":
-    pages.forecasting_page.render()
+    forecasting_page.render()
