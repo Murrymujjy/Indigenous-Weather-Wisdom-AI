@@ -24,10 +24,12 @@ def load_models():
         for col in columns_to_drop_from_raw:
             if col in train_df.columns:
                 train_df = train_df.drop(col, axis=1)
+            # The test set might not have the 'Target' column.
             if col in test_df.columns:
                 test_df = test_df.drop(col, axis=1)
 
         # Separate features from the target
+        y_train = train_df['Target']
         X_train = train_df.drop(['Target'], axis=1)
         X_test = test_df.drop(['Target'], axis=1)
 
@@ -84,20 +86,22 @@ def render():
                 'district': district,
                 'predicted_intensity': predicted_intensity,
                 'indicator': indicator,
-                'forecast_length': forecast_length
+                'forecast_length': forecast_length,
+                # Add dummy columns for other features to match the model's training data
+                'ID': None, 'user_id': None, 'prediction_time': None, 'time_observed': None, 'Target': None
             }])
             
             # --- CRITICAL FIX: Replicate notebook's preprocessing on user input ---
-            # 1. Label encode the user input
+            # Drop the same columns as the notebook
+            input_data = input_data.drop(columns=['ID', 'user_id', 'prediction_time', 'time_observed'], errors='ignore')
+
+            # Label encode the user input
             encoded_input_data = input_data.copy()
             for col, le in label_encoders.items():
                 encoded_input_data[col] = le.transform(encoded_input_data[col].astype(str))
             
-            # 2. Get the list of columns from the training data that the model expects
-            X_train = train_df.drop(['Target'], axis=1)
-            X_train = X_train.drop(['ID', 'user_id', 'prediction_time', 'time_observed'], axis=1, errors='ignore')
-            
             # Align user input with training data columns
+            X_train = train_df.drop(['Target'], axis=1)
             input_df = encoded_input_data.reindex(columns=X_train.columns, fill_value=0)
 
             # Make the prediction
