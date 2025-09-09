@@ -46,6 +46,11 @@ def render():
     lgbm_model = load_model()
 
     if df_train is not None and lgbm_model is not None:
+        # Check if 'rainfall' column exists before dropping
+        if 'rainfall' not in df_train.columns:
+            st.error("The `train_data.csv` file is missing the required 'rainfall' column. Please check your data.")
+            return
+
         # Prepare data for SHAP
         X = df_train.drop('rainfall', axis=1)
         y = df_train['rainfall']
