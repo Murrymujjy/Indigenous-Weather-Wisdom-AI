@@ -23,7 +23,6 @@ def load_models():
         st.error(f"An error occurred while loading models: {e}")
         st.stop()
 
-
 # --- Page Content ---
 def render():
     st.title("🌦️ Make a New Prediction")
@@ -64,8 +63,30 @@ def render():
             'forecast_length': [forecast_length]
         })
 
-        # Make prediction
-        prediction = lgbm_model.predict(input_data)
+        # --- Data Preprocessing to match the trained model ---
+        # Get the categorical columns from the training data
+        categorical_cols = train_df.select_dtypes(include='object').columns.tolist()
+        
+        # One-hot encode the user's input data
+        input_encoded = pd.get_dummies(input_data, columns=categorical_cols, drop_first=True)
+        
+        # Get the feature names from the trained model
+        # This is a critical step to ensure column order and names match
+        model_features = lgbm_model.feature_name_
+        
+        # Create a new DataFrame with the same columns as the training data
+        final_input = pd.DataFrame(columns=model_features)
+        
+        # Add the one-hot encoded user data to the new DataFrame
+        for col in input_encoded.columns:
+            if col in final_input.columns:
+                final_input[col] = input_encoded[col]
+
+        # Fill any missing columns (from one-hot encoding) with 0
+        final_input.fillna(0, inplace=True)
+        
+        # Now, make prediction
+        prediction = lgbm_model.predict(final_input)
         
         st.subheader("Prediction Result")
         st.success(f"The predicted rainfall category is: **{prediction[0]}**")
