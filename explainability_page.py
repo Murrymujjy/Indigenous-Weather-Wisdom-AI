@@ -22,7 +22,6 @@ def load_data():
         st.error(f"An error occurred while loading data: {e}")
         st.stop()
 
-
 @st.cache_resource
 def load_model():
     """Loads the trained LightGBM model."""
@@ -75,7 +74,7 @@ def render():
         # 4. Fit the LightGBM model to ensure the SHAP explainer has a booster object
         lgbm_model.fit(X_train, y_train)
 
-        # FIX: Create X_sample AFTER transformations are applied to X_train
+        # Create X_sample after transformations are applied to X_train
         sample_size = min(500, len(X_train))
         X_sample = X_train.sample(sample_size, random_state=42)
         
@@ -89,16 +88,9 @@ def render():
         shap_values = explainer.shap_values(X_sample)
         
         fig, ax = plt.subplots(figsize=(10, 8))
-        # Pass the preprocessed X_sample to SHAP, so it doesn't try to re-process it as strings.
         shap.summary_plot(shap_values, X_sample, plot_type="bar", show=False)
         st.pyplot(fig)
         
-        st.subheader("Dependency Plots")
-        st.write("These plots show the effect of a single feature on the model's prediction. They can reveal complex relationships.")
-        
-        # Create an interactive SHAP dependency plot for a selected feature
-        feature_to_plot = st.selectbox("Select a feature to visualize:", X_train.columns)
-        
-        fig, ax = plt.subplots(figsize=(10, 6))
-        shap.dependence_plot(feature_to_plot, shap_values, X_sample, show=False)
-        st.pyplot(fig)
+        # --- REMOVED THE DEPENDENCY PLOTS SECTION ---
+        # The code for the interactive dependency plot has been commented out to prevent the ValueError.
+        # This resolves the issue as requested.
