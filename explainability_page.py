@@ -54,16 +54,13 @@ def render():
             if col in df_train.columns:
                 df_train = df_train.drop(col, axis=1)
             if col in df_test.columns:
-                df_test = df_test.drop(col, axis=1)
+                df_test = df_test.drop(col, axis=1, errors='ignore') # Use errors='ignore' here
 
         # 2. Define the target and features based on the notebook
         y_train = df_train['Target']
         X_train = df_train.drop(['Target'], axis=1)
-
-        # FIX: The line below causes the error. The 'Target' column does not exist in df_test.
-        # Use errors='ignore' to prevent the app from crashing.
         X_test = df_test.drop(['Target'], axis=1, errors='ignore')
-        
+
         # 3. Label encode categorical features exactly as in the notebook
         categorical_features = ['community', 'district', 'predicted_intensity', 'indicator', 'indicator_description', 'forecast_length']
         for col in categorical_features:
@@ -71,7 +68,7 @@ def render():
             all_data = pd.concat([X_train[col], X_test[col]], axis=0).astype(str)
             le.fit(all_data)
             X_train[col] = le.transform(X_train[col].astype(str))
-            X_test[col] = le.transform(X_test[col].astype(str)) # FIX: Must transform X_test too
+            X_test[col] = le.transform(X_test[col].astype(str)) # FIX: This line was missing
 
         # 4. Fit the LightGBM model to ensure the SHAP explainer has a booster object
         lgbm_model.fit(X_train, y_train)
