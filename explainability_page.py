@@ -75,6 +75,10 @@ def render():
         # 4. Fit the LightGBM model to ensure the SHAP explainer has a booster object
         lgbm_model.fit(X_train, y_train)
 
+        # FIX: Create X_sample AFTER transformations are applied to X_train
+        sample_size = min(500, len(X_train))
+        X_sample = X_train.sample(sample_size, random_state=42)
+        
         # SHAP Explainer
         explainer = shap.TreeExplainer(lgbm_model)
         
@@ -82,17 +86,10 @@ def render():
         st.write("This summary plot shows which features are most important for the model's predictions.")
         
         # Calculate SHAP values for a sample of the training data
-        sample_size = min(500, len(X_train))
-        X_sample = X_train.sample(sample_size, random_state=42)
-
-        # FIX: Ensure X_sample has the same transformations as X_train
-        # Apply the same LabelEncoders to the sampled data
-        for col in categorical_features:
-            X_sample[col] = encoders[col].transform(X_sample[col].astype(str))
-            
         shap_values = explainer.shap_values(X_sample)
         
         fig, ax = plt.subplots(figsize=(10, 8))
+        # Pass the preprocessed X_sample to SHAP, so it doesn't try to re-process it as strings.
         shap.summary_plot(shap_values, X_sample, plot_type="bar", show=False)
         st.pyplot(fig)
         
