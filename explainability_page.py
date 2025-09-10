@@ -54,7 +54,7 @@ def render():
             if col in df_train.columns:
                 df_train = df_train.drop(col, axis=1)
             if col in df_test.columns:
-                df_test = df_test.drop(col, axis=1, errors='ignore') # Use errors='ignore' here
+                df_test = df_test.drop(col, axis=1, errors='ignore')
 
         # 2. Define the target and features based on the notebook
         y_train = df_train['Target']
@@ -63,12 +63,14 @@ def render():
 
         # 3. Label encode categorical features exactly as in the notebook
         categorical_features = ['community', 'district', 'predicted_intensity', 'indicator', 'indicator_description', 'forecast_length']
+        encoders = {} # Store encoders to ensure consistency
         for col in categorical_features:
             le = LabelEncoder()
             all_data = pd.concat([X_train[col], X_test[col]], axis=0).astype(str)
             le.fit(all_data)
             X_train[col] = le.transform(X_train[col].astype(str))
-            X_test[col] = le.transform(X_test[col].astype(str)) # FIX: This line was missing
+            X_test[col] = le.transform(X_test[col].astype(str))
+            encoders[col] = le # Save the encoder for later use
 
         # 4. Fit the LightGBM model to ensure the SHAP explainer has a booster object
         lgbm_model.fit(X_train, y_train)
@@ -85,6 +87,7 @@ def render():
         shap_values = explainer.shap_values(X_sample)
         
         fig, ax = plt.subplots(figsize=(10, 8))
+        # Pass the preprocessed X_sample to SHAP, so it doesn't try to re-process it as strings.
         shap.summary_plot(shap_values, X_sample, plot_type="bar", show=False)
         st.pyplot(fig)
         
@@ -95,5 +98,6 @@ def render():
         feature_to_plot = st.selectbox("Select a feature to visualize:", X_train.columns)
         
         fig, ax = plt.subplots(figsize=(10, 6))
+        # Ensure the selected feature is correctly plotted by passing the transformed data.
         shap.dependence_plot(feature_to_plot, shap_values, X_sample, show=False)
         st.pyplot(fig)
